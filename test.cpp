@@ -75,3 +75,41 @@ int main(){
   ifs_log.close();
   return 0;
 }
+
+/*
+スケジュールtxt化用のVBA
+Sub makeScheduleTxt()
+
+Dim f() As Variant
+ReDim f(70, 64)
+Dim id() As Variant
+ReDim id(70, 64)
+
+Dim i As Long
+Dim j As Long
+For i = 0 To 69
+    For j = 0 To 63
+        If Worksheets("Sheet1").Cells(i, j) = "●" Then
+	    f(i, j) = Worksheets("Sheet1").Cells(i, 3)
+	    id(i, j) = Worksheets("Sheet1").Cells(i, 1)
+	Else
+	    f(i, j) = 0
+	    id(i, j) = 0
+	End If
+    Next
+Next
+Open "./schedule.txt" For Output As #1
+For j = 0 To 63
+    For i = 0 To 69
+        If f(i, j) <> 0 Then
+	    Print #1, j & " " & f(i, j) & " " & id(i, j)
+	End If
+    Next
+Next
+
+Close #1
+
+End Sub
+
+
+*/
