@@ -1,97 +1,77 @@
-#include <cmath>
+#include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
-#include <limits>
-#include <time.h>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
 using namespace std;
-double calculate_inverseerfc_big(double ber);
-double calculate_inverseerfc_small(double ber);
-double calculate_throughput(double cnr);
+int main(){
 
-//衛星環境に合わせてパラメータを調整する必要がある
-//パラメータ:最後cnrを何乗するか、berの係数(論文では2)
-int main(int argc, char* argv[]) {
-
-  clock_t start = clock();
-  double ber =  2*pow(10,-1*atoi(argv[1]));//2*P
-  double cnr = 0;
-  if(ber < 1 && ber>0.5)
-<<<<<<< HEAD:spacecraftWirelessInterCommunication/calculateErfInv.cpp
-  {
-    cnr = calculate_inverseerfc_big(ber);
+  /*スケジュールの読み込み*/
+  int repro_schedule,counter;
+  string funcname;
+  int reproid;
+  vector< vector<string> > fname(64);
+  vector< vector<int> > reproID(64);
+  ifstream ifs_schedule("schedule.txt");
+  while(ifs_schedule >> counter >> funcname >> reproid){
+    fname[counter].push_back(funcname);
+    reproID[counter].push_back(reproid);
   }
-  else if (0 < ber && ber <= 0.5)
-  {
-    cnr = calculate_inverseerfc_small(ber);
-  }
-=======
-    {
-      cnr = calculate_inverseerfc_big(ber);
-    }
-  else if (0 < ber && ber <= 0.5)
-    {
-      cnr = calculate_inverseerfc_small(ber);
-    }
->>>>>>> origin/master:spaceWirelessInterComm/calculateErfcInv.cpp
-  cout << "cnr: " << cnr*cnr << endl;
+  ifs_schedule.close();
 
-  double throughput = calculate_throughput(cnr*cnr);
-  cout << "BER: " << ber << "   throughput: " << throughput << endl;
+  printf("ERR No.1:実行された関数がスケジュールにない\n");
+  printf("ERR No.2:スケジュールされた関数が実行されていない\n");
 
-  clock_t end = clock();
-  cout << (double)(end-start)/CLOCKS_PER_SEC*1000.0 << " [ms] " << endl;
+  /*テストログの読み込み*/
+  ifstream ifs_log("testlog.txt");
+  string line;
+  int countNum_log = -1;
+  int repro_log = 0;
+  while(getline(ifs_log,line)){
+    stringstream linestream(line);
+    vector<string> str;
+    string s;
+    while(getline(linestream,s,' ') ){
+      str.push_back(s);
+    }
+      string str1;
+    if(str[0].length()>3) str1 = str[0].substr(str[0].length()-3);
+    string str2 = str[0].substr(0,1);
+
+    if(str1 == "cas"){/*カウントとIDの読み取り*/
+      /*前回のERR No.2の判断(初めの行以外)*/
+      if(countNum_log != -1){
+        for(int i=0;i<fname[countNum_log].size();i++){
+          if(fname[countNum_log][i]!="0"){
+            printf("ERR No.2 : %s\n",fname[countNum_log][i].c_str());
+          }
+        }
+      }
+
+      printf("%s\n",str[0].c_str());
+      countNum_log = atoi(str[1].c_str());
+      repro_log = atoi(str[2].c_str());
+
+    } else if(str2 == ">"){/*実行関数読み取り*/
+      int flg = 0;
+      for(int i=0;i<fname[countNum_log].size();i++){
+	if(str[1] == fname[countNum_log][i] && repro_log != reproID[countNum_log][i]){
+	  flg = 1;
+	  fname[countNum_log][i] = "0";
+	}
+      }
+      if(flg==0){
+	printf("ERR No.1 : %s\n",str[1].c_str());
+        for(int i=0;i<fname[countNum_log].size();i++){
+          if(str[1] == fname[countNum_log][i]){//再プロID                       
+            fname[countNum_log][i] = "0";
+          }
+        }
+      }
+    }
+  }//while                                                                      
+  ifs_log.close();
   return 0;
-}
-
-double calculate_inverseerfc_big(double ber)
-{
-  int N = 100;
-  double c[N];
-  double cnr = 0;
-  for(int k=0;k<N;k++){
-    if(k==0) c[0] = 1;
-    else c[k] = 0;
-  }
-  
-  for(int k=0;k<N;k++){
-    for(int m=0;m<k;m++){
-      c[k] = c[k] + (c[m]*c[k-1-m])/((m+1)*(2*m+1));
-    }
-    cnr = cnr + c[k]*pow(sqrt(M_PI)*(1-ber)/2,2*k+1)/(2*k+1);
-  }
-
-  return cnr;
-}
-//前提：f(x)+g(x)=1 , g^-1(x)がわかっている
-//y=g(x)=>g^-1(y)=x , z=f(x)=>f^-1(z)=x , y+z=1
-//x=f^-1(z)=g^-1(y)=g^-1(1-z) => f^-1(x)=g^-1(1-x)
-//cnr<2くらいまでは精度が良い
-//それより大きくなると精度が悪くなるので、BERの値に応じて近似式を使い分ける
-//   x=0付近では以下のlogを使った方法を使う
-// https://pdfs.semanticscholar.org/7ded/4d4d5e7cf5de00bfff38e8710c2a79cf5210.pdf?_ga=2.207917074.1894478943.1602209379-1472185907.1595507135
-
-/*論文の方法*/
-double calculate_inverseerfc_small(double ber)
-{
-<<<<<<< HEAD:spacecraftWirelessInterCommunication/calculateErfInv.cpp
-    double cnr = 0;
-    ber = -log(sqrt(M_PI)*ber);
-    cnr = ber-log(ber)/2+(log(ber)/4-1/2)/ber;
-    cnr = sqrt(cnr);
-    return cnr;
-=======
-  double cnr = 0;
-  ber = -log(sqrt(M_PI)*ber);
-  cnr = ber-log(ber)/2+(log(ber)/4-1/2)/ber;
-  cnr = sqrt(cnr);
-  return cnr;
->>>>>>> origin/master:spaceWirelessInterComm/calculateErfcInv.cpp
-}
-
-//CN比から伝送速度を求める
-// C=Wlog_2(1+CNR)
-// Wは周波数帯域幅->UWBは数MHz～数百MHz
-double calculate_throughput(double cnr)
-{
-  double W = pow(10,7);
-  return W*log2(1+cnr);
 }
