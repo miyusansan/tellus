@@ -15,7 +15,12 @@ int main(){
   vector< vector<string> > fname(64);
   vector< vector<int> > reproID(64);
   ifstream ifs_schedule("schedule.txt");
-  while(ifs_schedule >> counter >> funcname >> reproid){
+  string s;
+  while( getline(ifs_schedule, s, ';') ){
+//  while(ifs_schedule >> counter >> funcname >> reproid){
+    counter = s;
+    funcname = s;
+    reproid = s;
     fname[counter].push_back(funcname);
     reproID[counter].push_back(reproid);
   }
