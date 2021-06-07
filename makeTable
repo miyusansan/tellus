@@ -1,7 +1,3 @@
-/* パラメータ参照テーブルにデータを設定 */
-/* 整列済みKeyTableから、シャッフルKeyTablと対応するIdxTableを生成する */
-/* 初期状態と、合格判定基準を作るのに使う */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,25 +26,18 @@ int main(int argc, char* argv[])
         return 0;
     }
     int wiSetNum = atoi(argv[1]);
-    //KeyTbl 順番バラバラ
-    //IdxTbl 昇順にKeyTableを並べた場合のインデックス値が順番に入っている
-    //1. 参照IDの順序ばらばらのTable(map型)を作成(インデックスと同値のkeyをもつ)
-    //2. 1のTableを通常配列としたKeyTableを生成。また、1のTableの要素をkey、0,1,2,...を要素としたmapを生成
-    //3. 1のTableの各値を0,1,2,...,の形に変換し、(例えば、1の元が3の倍数だったら3で割る)
-    //   IdxTableのインデックスとする。IdxTableの値には1のkey値を設定する。
     //[応用] "INTERVALの倍数"の所を別の数式にして、関数化すればもっとランダムにできる
     int wi;
     vector<unsigned int> wuiShuffleTable;
     map<unsigned int, int> wuiShuffleIdxTable;
     map<unsigned int, int>::iterator it_s;
-    //[TODO] 絶対登録したい参照IDを手動で設定したい
     for( wi = 0; wi < wiSetNum; wi++)
     {
-        //[TODO] exelからのインプットにしたい（特に合格判定基準を作るとき）
+        //[TODO] exelからのインプットにしたい
         wuiShuffleTable.push_back(wi*INTERVAL);
         wuiShuffleIdxTable[wuiShuffleTable[wi]] = wi;
     }
-    //KeyTableシャッフル
+
     random_device seed_gen;
     mt19937_64 engine(seed_gen());
     shuffle(wuiShuffleTable.begin(), wuiShuffleTable.end(), engine);
