@@ -1,0 +1,97 @@
+/* パラメータ参照テーブルにデータを設定 */
+/* 整列済みKeyTableから、シャッフルKeyTablと対応するIdxTableを生成する */
+/* 初期状態と、合格判定基準を作るのに使う */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <map>
+#include <cstdlib>
+#include <random>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+#define NORMAL_ARGV_NUM 2
+#define PRM_REF_TABLE_SIZE 256
+#define INTERVAL 4
+
+
+int main(int argc, char* argv[])
+{
+    //コマンドライン引数
+    //登録数
+    if (argc != NORMAL_ARGV_NUM + 1)
+    {
+        printf("input num error\n");
+        return 0;
+    }
+    int wiSetNum = atoi(argv[1]);
+    //KeyTbl 順番バラバラ
+    //IdxTbl 昇順にKeyTableを並べた場合のインデックス値が順番に入っている
+    //1. 参照IDの順序ばらばらのTable(map型)を作成(インデックスと同値のkeyをもつ)
+    //2. 1のTableを通常配列としたKeyTableを生成。また、1のTableの要素をkey、0,1,2,...を要素としたmapを生成
+    //3. 1のTableの各値を0,1,2,...,の形に変換し、(例えば、1の元が3の倍数だったら3で割る)
+    //   IdxTableのインデックスとする。IdxTableの値には1のkey値を設定する。
+    //[応用] "INTERVALの倍数"の所を別の数式にして、関数化すればもっとランダムにできる
+    int wi;
+    vector<unsigned int> wuiShuffleTable;
+    map<unsigned int, int> wuiShuffleIdxTable;
+    map<unsigned int, int>::iterator it_s;
+    //[TODO] 絶対登録したい参照IDを手動で設定したい
+    for( wi = 0; wi < wiSetNum; wi++)
+    {
+        //[TODO] exelからのインプットにしたい（特に合格判定基準を作るとき）
+        wuiShuffleTable.push_back(wi*INTERVAL);
+        wuiShuffleIdxTable[wuiShuffleTable[wi]] = wi;
+    }
+    //KeyTableシャッフル
+    random_device seed_gen;
+    mt19937_64 engine(seed_gen());
+    shuffle(wuiShuffleTable.begin(), wuiShuffleTable.end(), engine);
+
+    map<int, unsigned int> wuiKeyTable;
+    map<int, unsigned int>::iterator it;
+    unsigned int wuiIdxTable[PRM_REF_TABLE_SIZE];
+    int wiKey;
+    for( wiKey = 0; wiKey < wiSetNum; wiKey++)
+    {
+        wuiKeyTable[wiKey] = wuiShuffleTable[wiKey];
+    }
+    for( wiKey = 0; wiKey < wiSetNum; wiKey++)
+    {
+        it = wuiKeyTable.find(wiKey);
+        //key値がitで指定された区分IDであるときの要素を取得
+        it_s = wuiShuffleIdxTable.find((*it).second);
+        wuiIdxTable[(*it_s).second] = wiKey;
+    }
+
+
+    unsigned int zuiKeyTable[wiSetNum], zuiIdxTable[wiSetNum];
+    for( wi = 0; wi < wiSetNum; wi++)
+    {
+        zuiKeyTable[wi] = wuiKeyTable[wi];
+        zuiIdxTable[wi] = wuiIdxTable[wi];
+    }
+
+    //csvファイル出力
+    char output_key_path[256], output_idx_path[256];
+    sprintf(output_key_path, "PrmRefKeyTable_%02x_%s.csv", wiSetNum, argv[2]);
+    sprintf(output_idx_path, "PrmRefIdxTable_%02x_%s.csv", wiSetNum, argv[2]);
+    
+    ofstream ofs_file_key(output_key_path);
+    ofstream ofs_file_idx(output_idx_path);
+    char output_key[1024], output_idx[1024];
+    for( wi = 0; wi < wiSetNum; wi++)
+    {
+        sprintf(output_key, "uint,zuc(%d),0x%04x,", wi, zuiKeyTable[wi]);
+        ofs_file_key << output_key << endl;
+        sprintf(output_idx, "uint,zuc(%d),0x%04x,", wi, zuiIdxTable[wi]);
+        ofs_file_idx << output_idx << endl;
+    }
+
+    return 0;
+}
